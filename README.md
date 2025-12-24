@@ -1,4 +1,4 @@
-# RAG-JS
+# rag-groq
 
 A **Retrieval-Augmented Generation (RAG)** package for Node.js that integrates multiple data sources with Groq's lightning-fast LLM API for intelligent question-answering.
 
@@ -514,7 +514,7 @@ await ragEngine.addDocument({
 
 ## Web UI
 
-RAG-JS includes a built-in web interface for querying your data:
+rag-groq includes a built-in web interface for querying your data:
 
 1. Start the server: `npm start`
 2. Open `http://localhost:3000` in your browser
@@ -530,7 +530,7 @@ Features:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        RAG-JS                                │
+│                        rag-groq                              │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   API       │  │  RAG Engine │  │    Data Sources     │  │

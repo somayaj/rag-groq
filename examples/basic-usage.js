@@ -1,7 +1,7 @@
 /**
- * RAG-JS Basic Usage Example
+ * rag-groq Basic Usage Example
  * 
- * This example demonstrates how to use RAG-JS programmatically
+ * This example demonstrates how to use rag-groq programmatically
  * to query your data and get LLM-powered answers.
  * 
  * Run with: node examples/basic-usage.js
@@ -43,7 +43,7 @@ async function askQuestion(ragEngine, question) {
  * Main function
  */
 async function main() {
-  console.log('🚀 RAG-JS Basic Usage Example\n');
+  console.log('🚀 rag-groq Basic Usage Example\n');
   
   // ===== STEP 1: Create Data Source =====
   console.log('📂 Step 1: Setting up CSV data source...');

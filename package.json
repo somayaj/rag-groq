@@ -1,6 +1,6 @@
 {
   "name": "rag-groq",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A RAG (Retrieval-Augmented Generation) package that integrates multiple data sources (CSV, Database, Pinecone) with Groq LLM for intelligent Q&A",
   "main": "src/index.js",
   "type": "module",
@@ -54,4 +54,3 @@
     "node": ">=18.0.0"
   }
 }
-

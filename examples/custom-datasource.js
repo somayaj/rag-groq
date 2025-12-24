@@ -1,5 +1,5 @@
 /**
- * RAG-JS Custom Data Source Example
+ * rag-groq Custom Data Source Example
  * 
  * This example shows how to use different data sources:
  * - CSV files
@@ -89,7 +89,7 @@ function createPineconeDataSource(embeddings) {
 // ===== MAIN FUNCTION =====
 
 async function main() {
-  console.log('🚀 RAG-JS Custom Data Source Example\n');
+  console.log('🚀 rag-groq Custom Data Source Example\n');
   
   // Choose which data source to use
   const DATA_SOURCE_TYPE = process.env.DATASOURCE_TYPE || 'csv';

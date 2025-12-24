@@ -1,5 +1,5 @@
 /**
- * RAG-JS Server Entry Point
+ * rag-groq Server Entry Point
  * Standalone server that can be configured via environment variables
  */
 
@@ -8,7 +8,7 @@ import { createRAGAPI, createDataSource } from './index.js';
 import { startServer } from './api/server.js';
 
 async function main() {
-  console.log('🔧 Initializing RAG-JS Server...\n');
+  console.log('🔧 Initializing rag-groq Server...\n');
 
   // Get configuration from environment
   const groqApiKey = process.env.GROQ_API_KEY;

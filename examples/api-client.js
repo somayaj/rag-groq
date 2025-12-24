@@ -1,7 +1,7 @@
 /**
- * RAG-JS API Client Example
+ * rag-groq API Client Example
  * 
- * This example shows how to interact with the RAG-JS REST API
+ * This example shows how to interact with the rag-groq REST API
  * from any JavaScript/Node.js application.
  * 
  * First, start the server: npm start
@@ -106,7 +106,7 @@ async function queryStream(question, onChunk) {
 // ===== MAIN =====
 
 async function main() {
-  console.log('🚀 RAG-JS API Client Example\n');
+  console.log('🚀 rag-groq API Client Example\n');
   console.log(`📡 Connecting to: ${API_BASE}\n`);
   
   try {

@@ -1,5 +1,5 @@
 {
-  "name": "rag-js",
+  "name": "@somayajulaas/rag-js",
   "version": "1.0.0",
   "description": "A RAG (Retrieval-Augmented Generation) package that integrates multiple data sources (CSV, Database, Pinecone) with Groq LLM for intelligent Q&A",
   "main": "src/index.js",
@@ -21,8 +21,24 @@
     "embeddings",
     "question-answering"
   ],
-  "author": "",
+  "author": "somayaj",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/somayaj/rag-js.git"
+  },
+  "homepage": "https://github.com/somayaj/rag-js#readme",
+  "bugs": {
+    "url": "https://github.com/somayaj/rag-js/issues"
+  },
+  "files": [
+    "src/",
+    "public/",
+    "data/sample.csv",
+    "examples/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "better-sqlite3": "^11.6.0",
     "csv-parse": "^5.5.6",

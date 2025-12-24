@@ -14,7 +14,7 @@ A **Retrieval-Augmented Generation (RAG)** package for Node.js that integrates m
 ## Installation
 
 ```bash
-npm install rag-js
+npm install @somayajulaas/rag-js
 ```
 
 Or clone and install locally:
@@ -57,7 +57,7 @@ curl -X POST http://localhost:3000/query \
 ### Quick Setup (Recommended)
 
 ```javascript
-import { createRAGAPI, createDataSource } from 'rag-js';
+import { createRAGAPI, createDataSource } from '@somayajulaas/rag-js';
 
 // 1. Create a data source (CSV, SQLite, PostgreSQL, or Pinecone)
 const dataSource = createDataSource('csv', {
@@ -84,7 +84,7 @@ app.listen(3000, () => {
 Use the RAG engine directly in your Node.js application without starting a server:
 
 ```javascript
-import { RAGEngine, CSVDataSource, GroqLLM, LocalEmbeddings } from 'rag-js';
+import { RAGEngine, CSVDataSource, GroqLLM, LocalEmbeddings } from '@somayajulaas/rag-js';
 
 async function main() {
   // Step 1: Configure your data source
@@ -191,7 +191,7 @@ documents.forEach(doc => {
 Create a file `example.js`:
 
 ```javascript
-import { RAGEngine, CSVDataSource, GroqLLM, LocalEmbeddings } from 'rag-js';
+import { RAGEngine, CSVDataSource, GroqLLM, LocalEmbeddings } from '@somayajulaas/rag-js';
 
 const GROQ_API_KEY = 'your-groq-api-key';
 
@@ -311,7 +311,7 @@ for await (const chunk of ragEngine.queryStream('Explain neural networks')) {
 ### CSV
 
 ```javascript
-import { CSVDataSource } from 'rag-js';
+import { CSVDataSource } from '@somayajulaas/rag-js';
 
 const dataSource = new CSVDataSource({
   filePath: './data/documents.csv',
@@ -324,7 +324,7 @@ const dataSource = new CSVDataSource({
 ### SQLite
 
 ```javascript
-import { SQLiteDataSource } from 'rag-js';
+import { SQLiteDataSource } from '@somayajulaas/rag-js';
 
 const dataSource = new SQLiteDataSource({
   dbPath: './data/knowledge.sqlite',
@@ -337,7 +337,7 @@ const dataSource = new SQLiteDataSource({
 ### PostgreSQL
 
 ```javascript
-import { PostgresDataSource } from 'rag-js';
+import { PostgresDataSource } from '@somayajulaas/rag-js';
 
 const dataSource = new PostgresDataSource({
   host: 'localhost',
@@ -353,7 +353,7 @@ const dataSource = new PostgresDataSource({
 ### Pinecone
 
 ```javascript
-import { PineconeDataSource } from 'rag-js';
+import { PineconeDataSource } from '@somayajulaas/rag-js';
 
 const dataSource = new PineconeDataSource({
   apiKey: process.env.PINECONE_API_KEY,

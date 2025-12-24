@@ -25,11 +25,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/somayaj/rag-js.git"
+    "url": "git+https://github.com/somayaj/rag-groq.git"
   },
-  "homepage": "https://github.com/somayaj/rag-js#readme",
+  "homepage": "https://github.com/somayaj/rag-groq#readme",
   "bugs": {
-    "url": "https://github.com/somayaj/rag-js/issues"
+    "url": "https://github.com/somayaj/rag-groq/issues"
   },
   "files": [
     "src/",

@@ -21,7 +21,7 @@ Or clone and install locally:
 
 ```bash
 git clone <repository-url>
-cd rag-js
+cd rag-groq
 npm install
 ```
 

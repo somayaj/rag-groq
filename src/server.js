@@ -28,6 +28,19 @@ async function main() {
   
   try {
     switch (dataSourceType.toLowerCase()) {
+      case 'file':
+      case 'files':
+      case 'directory':
+      case 'folder':
+        const filePath = process.env.DATA_PATH || process.env.FILE_PATH || './data';
+        dataSource = createDataSource('file', {
+          path: filePath,
+          recursive: process.env.RECURSIVE === 'true',
+          chunkSize: parseInt(process.env.CHUNK_SIZE) || 1000
+        });
+        console.log(`📁 Data source: Files (${filePath})`);
+        break;
+
       case 'csv':
         const csvPath = process.env.CSV_FILE_PATH;
         if (!csvPath) {

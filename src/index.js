@@ -5,6 +5,7 @@
 
 import { RAGEngine } from './rag/engine.js';
 import { CSVDataSource } from './datasources/csv.js';
+import { FileDataSource } from './datasources/file.js';
 import { SQLiteDataSource } from './datasources/sqlite.js';
 import { PostgresDataSource } from './datasources/postgres.js';
 import { PineconeDataSource } from './datasources/pinecone.js';
@@ -15,6 +16,7 @@ import { createAPIServer } from './api/server.js';
 export {
   RAGEngine,
   CSVDataSource,
+  FileDataSource,
   SQLiteDataSource,
   PostgresDataSource,
   PineconeDataSource,
@@ -70,12 +72,17 @@ export async function createRAGAPI(config) {
 
 /**
  * Helper function to create a data source from type
- * @param {string} type - Data source type (csv, sqlite, postgres, pinecone)
+ * @param {string} type - Data source type (file, csv, sqlite, postgres, pinecone)
  * @param {Object} config - Data source configuration
  * @returns {Object} - Data source instance
  */
 export function createDataSource(type, config) {
   switch (type.toLowerCase()) {
+    case 'file':
+    case 'files':
+    case 'directory':
+    case 'folder':
+      return new FileDataSource(config);
     case 'csv':
       return new CSVDataSource(config);
     case 'sqlite':

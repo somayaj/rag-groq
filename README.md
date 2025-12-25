@@ -4,7 +4,8 @@ A **Retrieval-Augmented Generation (RAG)** package for Node.js that integrates m
 
 ## Features
 
-- 🚀 **Multiple Data Sources**: CSV files, SQLite, PostgreSQL, and Pinecone vector database
+- 📁 **Multiple File Types**: CSV, TXT, PDF, Excel (XLSX/XLS), JSON, Markdown
+- 🚀 **Multiple Data Sources**: Files/folders, SQLite, PostgreSQL, and Pinecone vector database
 - ⚡ **Groq LLM Integration**: Ultra-fast inference with Llama 3.3, Mixtral, and more
 - 🔍 **Smart Retrieval**: TF-IDF based local embeddings with cosine similarity search
 - 🧠 **Hybrid Query Mode**: Quotes your data first, then supplements with LLM knowledge
@@ -371,6 +372,41 @@ for await (const chunk of ragEngine.queryStream('Explain neural networks')) {
 ```
 
 ## Data Sources
+
+### Files & Folders (Recommended)
+
+Load all supported files from a directory automatically:
+
+```javascript
+import { FileDataSource } from 'rag-groq';
+
+// Load all files from a folder
+const dataSource = new FileDataSource({
+  path: './data',              // File or directory path
+  recursive: false,            // Scan subdirectories
+  extensions: ['.csv', '.txt', '.pdf', '.xlsx', '.xls', '.json', '.md'],
+  chunkSize: 1000,             // Characters per chunk for large files
+  chunkOverlap: 200            // Overlap between chunks
+});
+```
+
+**Supported file types:**
+| Extension | Description |
+|-----------|-------------|
+| `.csv` | Comma-separated values (each row becomes a document) |
+| `.txt` | Plain text files (chunked automatically) |
+| `.pdf` | PDF documents (requires `pdf-parse`) |
+| `.xlsx`, `.xls` | Excel spreadsheets (each row becomes a document) |
+| `.json` | JSON files (arrays become multiple documents) |
+| `.md` | Markdown files (chunked automatically) |
+
+**Environment variables:**
+```env
+DATASOURCE_TYPE=file
+DATA_PATH=./data
+RECURSIVE=false
+CHUNK_SIZE=1000
+```
 
 ### CSV
 

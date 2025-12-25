@@ -7,6 +7,7 @@ export class RAGEngine {
     this.dataSource = config.dataSource;
     this.llm = config.llm;
     this.embeddings = config.embeddings;
+    this.guardrails = config.guardrails; // Guardrails instance
     this.topK = config.topK || 10;
     this.similarityThreshold = config.similarityThreshold || 0.15; // Lower threshold for better recall
     this.smartRouting = config.smartRouting ?? true; // Enable smart routing by default
@@ -247,10 +248,37 @@ export class RAGEngine {
       }
     }
 
+    // Apply guardrails to query
+    let validation = { allowed: true, sanitized: query };
+    if (this.guardrails) {
+      validation = this.guardrails.validateQuery(query, options.userId);
+      if (!validation.allowed) {
+        return {
+          answer: `I cannot process this query: ${validation.reason}`,
+          sources: [],
+          query: validation.sanitized || query,
+          mode,
+          routing: routingInfo,
+          blocked: true,
+          reason: validation.reason
+        };
+      }
+      query = validation.sanitized;
+    }
+
+    // Filter retrieved documents through guardrails
+    let filteredDocs = retrievedDocs;
+    if (this.guardrails) {
+      filteredDocs = retrievedDocs.filter(doc => {
+        const docValidation = this.guardrails.validateDocument(doc.content);
+        return docValidation.allowed;
+      });
+    }
+
     // Generate response
     const answer = await this.llm.generateResponse(
       query, 
-      mode === 'llm' ? [] : retrievedDocs, 
+      mode === 'llm' ? [] : filteredDocs, 
       {
         history: options.history,
         systemPrompt,
@@ -258,18 +286,32 @@ export class RAGEngine {
       }
     );
 
+    // Apply guardrails to response
+    let finalAnswer = answer;
+    if (this.guardrails) {
+      const responseValidation = this.guardrails.validateResponse(answer);
+      if (!responseValidation.allowed) {
+        finalAnswer = `Response blocked: ${responseValidation.reason}`;
+      } else {
+        finalAnswer = responseValidation.sanitized;
+        // Apply response policies (disclaimers, etc.)
+        finalAnswer = this.guardrails.applyResponsePolicies(finalAnswer, query);
+      }
+    }
+
     return {
-      answer,
-      sources: retrievedDocs.map(doc => ({
+      answer: finalAnswer,
+      sources: filteredDocs.map(doc => ({
         id: doc.id,
         content: doc.content, // Full content for display
         preview: doc.content.substring(0, 200) + (doc.content.length > 200 ? '...' : ''),
         metadata: doc.metadata,
         score: doc.score
       })),
-      query,
+      query: validation.sanitized || query,
       mode,
-      routing: routingInfo
+      routing: routingInfo,
+      warnings: validation.warnings || null
     };
   }
 

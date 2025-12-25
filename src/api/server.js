@@ -47,7 +47,38 @@ export function createAPIServer(ragEngine, options = {}) {
   app.get('/stats', (req, res) => {
     try {
       const stats = ragEngine.getStats();
+      if (ragEngine.guardrails) {
+        stats.guardrails = ragEngine.guardrails.getStats();
+      }
       res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get guardrails configuration
+  app.get('/guardrails', (req, res) => {
+    try {
+      if (!ragEngine.guardrails) {
+        return res.json({ enabled: false });
+      }
+      res.json(ragEngine.guardrails.getStats());
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update guardrails policies
+  app.put('/guardrails', (req, res) => {
+    try {
+      if (!ragEngine.guardrails) {
+        return res.status(404).json({ error: 'Guardrails not enabled' });
+      }
+      ragEngine.guardrails.updatePolicies(req.body);
+      res.json({ 
+        message: 'Policies updated',
+        stats: ragEngine.guardrails.getStats()
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -56,7 +87,7 @@ export function createAPIServer(ragEngine, options = {}) {
   // Query endpoint
   app.post('/query', async (req, res) => {
     try {
-      const { query, topK, history, systemPrompt, temperature, mode } = req.body;
+      const { query, topK, history, systemPrompt, temperature, mode, userId } = req.body;
 
       if (!query) {
         return res.status(400).json({ error: 'Query is required' });
@@ -72,8 +103,14 @@ export function createAPIServer(ragEngine, options = {}) {
         history,
         systemPrompt,
         temperature,
-        mode: mode || 'hybrid'
+        mode: mode || 'hybrid',
+        userId: userId || req.ip // Use IP as user ID if not provided
       });
+
+      // Return 403 if blocked by guardrails
+      if (result.blocked) {
+        return res.status(403).json(result);
+      }
 
       res.json(result);
     } catch (error) {

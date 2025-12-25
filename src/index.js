@@ -11,6 +11,7 @@ import { PostgresDataSource } from './datasources/postgres.js';
 import { PineconeDataSource } from './datasources/pinecone.js';
 import { GroqLLM } from './llm/groq.js';
 import { LocalEmbeddings } from './embeddings/local.js';
+import { Guardrails } from './guardrails/policies.js';
 import { createAPIServer } from './api/server.js';
 
 export {
@@ -22,6 +23,7 @@ export {
   PineconeDataSource,
   GroqLLM,
   LocalEmbeddings,
+  Guardrails,
   createAPIServer
 };
 
@@ -36,7 +38,8 @@ export async function createRAGAPI(config) {
     dataSource,
     port = 3000,
     topK = 5,
-    model = 'llama-3.3-70b-versatile'
+    model = 'llama-3.3-70b-versatile',
+    guardrails = null
   } = config;
 
   if (!groqApiKey) {
@@ -58,7 +61,8 @@ export async function createRAGAPI(config) {
     dataSource,
     llm,
     embeddings,
-    topK
+    topK,
+    guardrails
   });
 
   // Initialize the engine

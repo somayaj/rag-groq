@@ -4,7 +4,7 @@
  */
 
 import 'dotenv/config';
-import { createRAGAPI, createDataSource } from './index.js';
+import { createRAGAPI, createDataSource, Guardrails } from './index.js';
 import { startServer } from './api/server.js';
 
 async function main() {
@@ -106,12 +106,29 @@ async function main() {
         process.exit(1);
     }
 
+    // Create guardrails (if enabled)
+    let guardrails = null;
+    if (process.env.GUARDRAILS_ENABLED !== 'false') {
+      guardrails = new Guardrails({
+        enabled: true,
+        blockedTerms: process.env.BLOCKED_TERMS?.split(',').map(t => t.trim()) || [],
+        sensitiveTopics: process.env.SENSITIVE_TOPICS?.split(',').map(t => t.trim()) || [],
+        maxQueryLength: parseInt(process.env.MAX_QUERY_LENGTH) || 2000,
+        maxResponseLength: parseInt(process.env.MAX_RESPONSE_LENGTH) || 10000,
+        rateLimit: process.env.RATE_LIMIT ? {
+          requests: parseInt(process.env.RATE_LIMIT_REQUESTS) || 100,
+          window: parseInt(process.env.RATE_LIMIT_WINDOW) || 60000
+        } : null
+      });
+    }
+
     // Create RAG API
     const { app, ragEngine } = await createRAGAPI({
       groqApiKey,
       dataSource,
       topK,
-      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      guardrails
     });
 
     console.log(`\n📊 Loaded ${ragEngine.getStats().documentCount} documents`);

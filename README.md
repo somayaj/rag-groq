@@ -7,6 +7,8 @@ A **Retrieval-Augmented Generation (RAG)** package for Node.js that integrates m
 - 🚀 **Multiple Data Sources**: CSV files, SQLite, PostgreSQL, and Pinecone vector database
 - ⚡ **Groq LLM Integration**: Ultra-fast inference with Llama 3.3, Mixtral, and more
 - 🔍 **Smart Retrieval**: TF-IDF based local embeddings with cosine similarity search
+- 🧠 **Hybrid Query Mode**: Quotes your data first, then supplements with LLM knowledge
+- 🎯 **Smart Routing**: Automatically decides when to use RAG vs direct LLM
 - 🌐 **REST API**: Ready-to-use Express server with streaming support
 - 📦 **Modular Design**: Use as a library or standalone server
 - 🔧 **Highly Configurable**: Customize every aspect of the RAG pipeline
@@ -50,6 +52,68 @@ npm start
 curl -X POST http://localhost:3000/query \
   -H "Content-Type: application/json" \
   -d '{"query": "What is machine learning?"}'
+```
+
+## Query Modes
+
+rag-groq supports multiple query modes to intelligently combine your data with LLM knowledge:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **`hybrid`** (default) | Quotes data first, then adds LLM knowledge | Best of both worlds |
+| **`rag`** | Only uses retrieved context from your data | Strict data-only answers |
+| **`llm`** | Direct LLM without any data context | General knowledge questions |
+| **`auto`** | Smart routing based on relevance scores | Automatic optimization |
+
+### Hybrid Mode (Default)
+
+The hybrid mode first searches your data and quotes relevant information, then supplements with additional knowledge from the LLM:
+
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is machine learning?", "mode": "hybrid"}'
+```
+
+**Response format:**
+```
+From your data:
+"Machine Learning is a subset of artificial intelligence that enables systems 
+to learn and improve from experience without being explicitly programmed."
+
+Additional information:
+Machine learning has many real-world applications including image recognition,
+natural language processing, recommendation systems, and autonomous vehicles...
+```
+
+### Pure RAG Mode
+
+Only answers based on your data - no LLM supplementation:
+
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is machine learning?", "mode": "rag"}'
+```
+
+### Direct LLM Mode
+
+Bypasses your data entirely for general knowledge questions:
+
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is the capital of France?", "mode": "llm"}'
+```
+
+### Auto Mode
+
+Automatically decides the best mode based on how relevant your data is to the query:
+
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Tell me about Python", "mode": "auto"}'
 ```
 
 ## Usage as a Library

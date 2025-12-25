@@ -56,17 +56,23 @@ export function createAPIServer(ragEngine, options = {}) {
   // Query endpoint
   app.post('/query', async (req, res) => {
     try {
-      const { query, topK, history, systemPrompt, temperature } = req.body;
+      const { query, topK, history, systemPrompt, temperature, mode } = req.body;
 
       if (!query) {
         return res.status(400).json({ error: 'Query is required' });
       }
 
+      // mode options: 'auto', 'rag', 'hybrid', 'llm'
+      // - hybrid (default): Quote data first, then add LLM knowledge
+      // - rag: Only use retrieved context
+      // - llm: Direct LLM without context
+      // - auto: Automatically decide based on relevance
       const result = await ragEngine.query(query, {
         topK,
         history,
         systemPrompt,
-        temperature
+        temperature,
+        mode: mode || 'hybrid'
       });
 
       res.json(result);
@@ -79,7 +85,7 @@ export function createAPIServer(ragEngine, options = {}) {
   // Streaming query endpoint
   app.post('/query/stream', async (req, res) => {
     try {
-      const { query, topK, systemPrompt, temperature } = req.body;
+      const { query, topK, systemPrompt, temperature, mode } = req.body;
 
       if (!query) {
         return res.status(400).json({ error: 'Query is required' });
@@ -92,7 +98,8 @@ export function createAPIServer(ragEngine, options = {}) {
       const stream = ragEngine.queryStream(query, {
         topK,
         systemPrompt,
-        temperature
+        temperature,
+        mode: mode || 'hybrid'
       });
 
       for await (const chunk of stream) {

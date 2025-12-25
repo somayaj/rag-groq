@@ -9,6 +9,8 @@ export class RAGEngine {
     this.embeddings = config.embeddings;
     this.topK = config.topK || 5;
     this.similarityThreshold = config.similarityThreshold || 0.3;
+    this.smartRouting = config.smartRouting ?? true; // Enable smart routing by default
+    this.routingThreshold = config.routingThreshold || 0.25; // Min score to use RAG
     this.documentVectors = new Map();
     this.initialized = false;
   }
@@ -146,9 +148,47 @@ export class RAGEngine {
   }
 
   /**
-   * Query the RAG system
+   * Determine if query should use RAG or direct LLM
+   * @param {string} query - User's question
+   * @returns {Promise<Object>} - Routing decision with reason
+   */
+  async routeQuery(query) {
+    // Get top matches and check their scores
+    const retrievedDocs = await this.retrieve(query, this.topK);
+    
+    if (retrievedDocs.length === 0) {
+      return { useRAG: false, reason: 'no_documents', docs: [] };
+    }
+
+    const topScore = retrievedDocs[0]?.score || 0;
+    const avgScore = retrievedDocs.reduce((sum, d) => sum + d.score, 0) / retrievedDocs.length;
+
+    // If top document score is below threshold, likely a general question
+    if (topScore < this.routingThreshold) {
+      return { 
+        useRAG: false, 
+        reason: 'low_relevance', 
+        topScore,
+        avgScore,
+        docs: retrievedDocs 
+      };
+    }
+
+    return { 
+      useRAG: true, 
+      reason: 'relevant_content', 
+      topScore,
+      avgScore,
+      docs: retrievedDocs 
+    };
+  }
+
+  /**
+   * Query the RAG system with smart routing
+   * Automatically decides whether to use RAG, hybrid, or direct LLM
    * @param {string} query - User's question
    * @param {Object} options - Query options
+   * @param {string} options.mode - Force mode: 'auto', 'rag', 'hybrid', 'llm'
    * @returns {Promise<Object>} - Response with answer and sources
    */
   async query(query, options = {}) {
@@ -157,16 +197,66 @@ export class RAGEngine {
     }
 
     const topK = options.topK || this.topK;
+    const requestedMode = options.mode || 'hybrid'; // Default to hybrid mode
     
-    // Retrieve relevant documents
-    const retrievedDocs = await this.retrieve(query, topK);
+    let retrievedDocs = [];
+    let mode = requestedMode;
+    let routingInfo = null;
+
+    // Always retrieve documents first (except for pure LLM mode)
+    if (mode !== 'llm') {
+      retrievedDocs = await this.retrieve(query, topK);
+      routingInfo = {
+        topScore: retrievedDocs[0]?.score || 0,
+        avgScore: retrievedDocs.length > 0 
+          ? retrievedDocs.reduce((sum, d) => sum + d.score, 0) / retrievedDocs.length 
+          : 0,
+        docCount: retrievedDocs.length
+      };
+    }
+
+    // Determine system prompt based on mode
+    let systemPrompt = options.systemPrompt;
+    if (!systemPrompt) {
+      switch (mode) {
+        case 'hybrid':
+          // Hybrid: quote data first, then add LLM knowledge
+          systemPrompt = this.getHybridPrompt();
+          break;
+        case 'rag':
+          // Pure RAG: only use retrieved context
+          systemPrompt = null; // Use default RAG prompt from LLM
+          break;
+        case 'llm':
+          // Pure LLM: no context
+          systemPrompt = this.getDirectLLMPrompt();
+          retrievedDocs = [];
+          break;
+        case 'auto':
+        default:
+          // Auto: decide based on relevance scores
+          if (routingInfo && routingInfo.topScore >= this.routingThreshold) {
+            systemPrompt = this.getHybridPrompt();
+            mode = 'hybrid';
+          } else {
+            systemPrompt = this.getDirectLLMPrompt();
+            mode = 'llm';
+            // Keep docs for reference but don't use as context
+          }
+          break;
+      }
+    }
 
     // Generate response
-    const answer = await this.llm.generateResponse(query, retrievedDocs, {
-      history: options.history,
-      systemPrompt: options.systemPrompt,
-      temperature: options.temperature
-    });
+    const answer = await this.llm.generateResponse(
+      query, 
+      mode === 'llm' ? [] : retrievedDocs, 
+      {
+        history: options.history,
+        systemPrompt,
+        temperature: options.temperature
+      }
+    );
 
     return {
       answer,
@@ -176,7 +266,70 @@ export class RAGEngine {
         metadata: doc.metadata,
         score: doc.score
       })),
-      query
+      query,
+      mode,
+      routing: routingInfo
+    };
+  }
+
+  /**
+   * Get system prompt for direct LLM mode (no RAG context)
+   * @returns {string} - System prompt
+   */
+  getDirectLLMPrompt() {
+    return `You are a helpful AI assistant. Answer the user's question to the best of your knowledge.
+If you don't know something, say so. Be concise and accurate.`;
+  }
+
+  /**
+   * Get system prompt for hybrid mode (RAG + LLM enhancement)
+   * @returns {string} - System prompt
+   */
+  getHybridPrompt() {
+    return `You are a knowledgeable AI assistant that combines data-specific information with general knowledge.
+
+Instructions:
+1. FIRST, if relevant context is provided, quote and cite the specific information from the data source
+2. THEN, supplement with additional relevant information from your general knowledge
+3. Clearly distinguish between what comes from the provided data vs your general knowledge
+4. Format: Start with "From your data:" for data-specific info, then "Additional information:" for general knowledge
+5. If the context has relevant info, always include it first before adding general knowledge
+6. Be comprehensive but concise`;
+  }
+
+  /**
+   * Force RAG mode regardless of smart routing
+   * @param {string} query - User's question
+   * @param {Object} options - Query options
+   * @returns {Promise<Object>} - Response with answer and sources
+   */
+  async queryWithRAG(query, options = {}) {
+    return this.query(query, { ...options, smartRouting: false });
+  }
+
+  /**
+   * Force direct LLM mode (no retrieval)
+   * @param {string} query - User's question
+   * @param {Object} options - Query options
+   * @returns {Promise<Object>} - Response without sources
+   */
+  async queryDirectLLM(query, options = {}) {
+    if (!this.initialized) {
+      throw new Error('RAG engine not initialized. Call initialize() first.');
+    }
+
+    const answer = await this.llm.generateResponse(query, [], {
+      history: options.history,
+      systemPrompt: options.systemPrompt || this.getDirectLLMPrompt(),
+      temperature: options.temperature
+    });
+
+    return {
+      answer,
+      sources: [],
+      query,
+      mode: 'llm',
+      routing: { reason: 'forced_llm' }
     };
   }
 

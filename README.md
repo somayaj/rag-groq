@@ -5,7 +5,7 @@ A **Retrieval-Augmented Generation (RAG)** package for Node.js that integrates m
 ## Features
 
 - 📁 **Multiple File Types**: CSV, TXT, PDF, Excel (XLSX/XLS), JSON, Markdown
-- 🚀 **Multiple Data Sources**: Files/folders, SQLite, PostgreSQL, and Pinecone vector database
+- 🚀 **Multiple Data Sources**: Files/folders, SQLite, PostgreSQL, Pinecone vector database, and Elasticsearch
 - ⚡ **Groq LLM Integration**: Ultra-fast inference with Llama 3.3, Mixtral, and more
 - 🔍 **Smart Retrieval**: TF-IDF based local embeddings with cosine similarity search
 - 🧠 **Hybrid Query Mode**: Quotes your data first, then supplements with LLM knowledge
@@ -124,7 +124,7 @@ curl -X POST http://localhost:3000/query \
 ```javascript
 import { createRAGAPI, createDataSource } from 'rag-groq';
 
-// 1. Create a data source (CSV, SQLite, PostgreSQL, or Pinecone)
+// 1. Create a data source (CSV, SQLite, PostgreSQL, Pinecone, or Elasticsearch)
 const dataSource = createDataSource('csv', {
   filePath: './data/mydata.csv',
   contentColumn: 'text'  // Column containing the text to search
@@ -505,6 +505,62 @@ dataSource.setEmbeddingFunction(async (text) => {
 });
 ```
 
+### Elasticsearch
+
+Elasticsearch provides both full-text search and vector search capabilities:
+
+```javascript
+import { ElasticsearchDataSource } from 'rag-groq';
+
+const dataSource = new ElasticsearchDataSource({
+  node: 'http://localhost:9200',        // Elasticsearch node URL
+  indexName: 'rag-documents',          // Index name
+  dimension: 384,                       // Vector dimension
+  contentField: 'content',              // Field containing document content
+  idField: 'id',                       // Field for document IDs
+  
+  // Authentication (choose one):
+  username: process.env.ELASTICSEARCH_USERNAME,
+  password: process.env.ELASTICSEARCH_PASSWORD,
+  // OR
+  // apiKey: process.env.ELASTICSEARCH_API_KEY,
+  // OR for Elastic Cloud:
+  // cloudId: process.env.ELASTICSEARCH_CLOUD_ID
+});
+
+// Set embedding function for vector search (optional but recommended)
+dataSource.setEmbeddingFunction(async (text) => {
+  return await embeddings.embed(text);
+});
+```
+
+**Features:**
+- 🔍 **Hybrid Search**: Combines full-text search with vector similarity search
+- 📊 **Automatic Index Management**: Creates index with proper mappings automatically
+- 🔐 **Multiple Auth Methods**: Username/password, API key, or Cloud ID
+- ⚡ **Production Ready**: Suitable for large-scale deployments
+
+**Environment variables:**
+```env
+DATASOURCE_TYPE=elasticsearch
+ELASTICSEARCH_NODE=http://localhost:9200
+ELASTICSEARCH_INDEX_NAME=rag-documents
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PASSWORD=your_password
+ELASTICSEARCH_DIMENSION=384
+```
+
+**Quick setup with Docker:**
+```bash
+# Start Elasticsearch locally
+docker run -d \
+  --name elasticsearch \
+  -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+```
+
 ## API Endpoints
 
 | Method | Endpoint | Description |
@@ -568,6 +624,13 @@ dataSource.setEmbeddingFunction(async (text) => {
 | `POSTGRES_DATABASE` | PostgreSQL database | - |
 | `PINECONE_API_KEY` | Pinecone API key | - |
 | `PINECONE_INDEX_NAME` | Pinecone index name | - |
+| `ELASTICSEARCH_NODE` | Elasticsearch node URL | http://localhost:9200 |
+| `ELASTICSEARCH_INDEX_NAME` | Elasticsearch index name | rag-documents |
+| `ELASTICSEARCH_USERNAME` | Elasticsearch username | - |
+| `ELASTICSEARCH_PASSWORD` | Elasticsearch password | - |
+| `ELASTICSEARCH_API_KEY` | Elasticsearch API key | - |
+| `ELASTICSEARCH_CLOUD_ID` | Elastic Cloud ID | - |
+| `ELASTICSEARCH_DIMENSION` | Vector dimension | 384 |
 | `TOP_K_RESULTS` | Number of documents to retrieve | 5 |
 | `GROQ_MODEL` | Groq model to use | llama-3.3-70b-versatile |
 
@@ -671,9 +734,9 @@ Features:
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   API       │  │  RAG Engine │  │    Data Sources     │  │
-│  │   Server    │──│             │──│  ┌───┐ ┌───┐ ┌───┐  │  │
-│  │  (Express)  │  │  Retrieve   │  │  │CSV│ │DB │ │PC │  │  │
-│  └─────────────┘  │  + Generate │  │  └───┘ └───┘ └───┘  │  │
+│  │   Server    │──│             │──│  ┌───┐ ┌───┐ ┌───┐ ┌───┐ │  │
+│  │  (Express)  │  │  Retrieve   │  │  │CSV│ │DB │ │PC │ │ES │ │  │
+│  └─────────────┘  │  + Generate │  │  └───┘ └───┘ └───┘ └───┘ │  │
 │                   └─────────────┘  └─────────────────────┘  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │ Embeddings  │  │  Groq LLM   │  │     Web UI          │  │

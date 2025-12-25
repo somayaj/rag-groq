@@ -100,9 +100,30 @@ async function main() {
         console.log(`🌲 Data source: Pinecone (${pineconeIndex})`);
         break;
 
+      case 'elasticsearch':
+      case 'es':
+        const esNode = process.env.ELASTICSEARCH_NODE || process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
+        const esIndex = process.env.ELASTICSEARCH_INDEX_NAME || 'rag-documents';
+        const esUsername = process.env.ELASTICSEARCH_USERNAME;
+        const esPassword = process.env.ELASTICSEARCH_PASSWORD;
+        const esApiKey = process.env.ELASTICSEARCH_API_KEY;
+        const esCloudId = process.env.ELASTICSEARCH_CLOUD_ID;
+        
+        dataSource = createDataSource('elasticsearch', {
+          node: esNode,
+          indexName: esIndex,
+          username: esUsername,
+          password: esPassword,
+          apiKey: esApiKey,
+          cloudId: esCloudId,
+          dimension: parseInt(process.env.ELASTICSEARCH_DIMENSION) || 384
+        });
+        console.log(`🔍 Data source: Elasticsearch (${esIndex} at ${esNode})`);
+        break;
+
       default:
         console.error(`❌ Error: Unknown data source type: ${dataSourceType}`);
-        console.error('   Supported types: csv, sqlite, postgres, pinecone');
+        console.error('   Supported types: csv, sqlite, postgres, pinecone, elasticsearch');
         process.exit(1);
     }
 

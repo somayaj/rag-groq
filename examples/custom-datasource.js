@@ -6,6 +6,7 @@
  * - SQLite database
  * - PostgreSQL database
  * - Pinecone vector database
+ * - Elasticsearch
  * 
  * Run with: node examples/custom-datasource.js
  */
@@ -16,6 +17,7 @@ import {
   SQLiteDataSource, 
   PostgresDataSource,
   PineconeDataSource,
+  ElasticsearchDataSource,
   GroqLLM, 
   LocalEmbeddings 
 } from '../src/index.js';
@@ -86,6 +88,31 @@ function createPineconeDataSource(embeddings) {
   return dataSource;
 }
 
+/**
+ * Example 5: Elasticsearch Data Source
+ * Best for: Full-text search + vector search, production applications
+ */
+function createElasticsearchDataSource(embeddings) {
+  const dataSource = new ElasticsearchDataSource({
+    node: process.env.ELASTICSEARCH_NODE || process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+    indexName: process.env.ELASTICSEARCH_INDEX_NAME || 'rag-documents',
+    username: process.env.ELASTICSEARCH_USERNAME,
+    password: process.env.ELASTICSEARCH_PASSWORD,
+    apiKey: process.env.ELASTICSEARCH_API_KEY,
+    cloudId: process.env.ELASTICSEARCH_CLOUD_ID,
+    dimension: 384,
+    contentField: 'content',
+    idField: 'id'
+  });
+  
+  // Elasticsearch can use embedding function for vector search
+  dataSource.setEmbeddingFunction(async (text) => {
+    return await embeddings.embed(text);
+  });
+  
+  return dataSource;
+}
+
 // ===== MAIN FUNCTION =====
 
 async function main() {
@@ -113,6 +140,10 @@ async function main() {
       break;
     case 'pinecone':
       dataSource = createPineconeDataSource(embeddings);
+      break;
+    case 'elasticsearch':
+    case 'es':
+      dataSource = createElasticsearchDataSource(embeddings);
       break;
     default:
       throw new Error(`Unknown data source type: ${DATA_SOURCE_TYPE}`);

@@ -9,6 +9,7 @@ import { FileDataSource } from './datasources/file.js';
 import { SQLiteDataSource } from './datasources/sqlite.js';
 import { PostgresDataSource } from './datasources/postgres.js';
 import { PineconeDataSource } from './datasources/pinecone.js';
+import { ElasticsearchDataSource } from './datasources/elasticsearch.js';
 import { GroqLLM } from './llm/groq.js';
 import { LocalEmbeddings } from './embeddings/local.js';
 import { Guardrails } from './guardrails/policies.js';
@@ -21,6 +22,7 @@ export {
   SQLiteDataSource,
   PostgresDataSource,
   PineconeDataSource,
+  ElasticsearchDataSource,
   GroqLLM,
   LocalEmbeddings,
   Guardrails,
@@ -76,7 +78,7 @@ export async function createRAGAPI(config) {
 
 /**
  * Helper function to create a data source from type
- * @param {string} type - Data source type (file, csv, sqlite, postgres, pinecone)
+ * @param {string} type - Data source type (file, csv, sqlite, postgres, pinecone, elasticsearch)
  * @param {Object} config - Data source configuration
  * @returns {Object} - Data source instance
  */
@@ -95,6 +97,9 @@ export function createDataSource(type, config) {
       return new PostgresDataSource(config);
     case 'pinecone':
       return new PineconeDataSource(config);
+    case 'elasticsearch':
+    case 'es':
+      return new ElasticsearchDataSource(config);
     default:
       throw new Error(`Unknown data source type: ${type}`);
   }

@@ -1,7 +1,7 @@
 {
   "name": "rag-groq",
-  "version": "1.3.4",
-  "description": "A RAG (Retrieval-Augmented Generation) package that integrates multiple data sources (CSV, Database, Pinecone) with Groq LLM for intelligent Q&A",
+  "version": "1.4.0",
+  "description": "A RAG (Retrieval-Augmented Generation) package that integrates multiple data sources (CSV, Database, Pinecone, Elasticsearch) with Groq LLM for intelligent Q&A",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -17,6 +17,7 @@
     "ai",
     "csv",
     "pinecone",
+    "elasticsearch",
     "vector-database",
     "embeddings",
     "question-answering"
@@ -40,6 +41,7 @@
     "LICENSE"
   ],
   "dependencies": {
+    "@elastic/elasticsearch": "^8.15.0",
     "better-sqlite3": "^11.6.0",
     "chokidar": "^3.6.0",
     "csv-parse": "^5.5.6",

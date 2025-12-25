@@ -266,24 +266,69 @@ export class FileDataSource extends BaseDataSource {
   }
 
   /**
+   * Clean text by removing code artifacts, HTML, SVG, and other noise
+   */
+  cleanText(text) {
+    if (!text) return '';
+    
+    let cleaned = text
+      // Remove SVG and HTML tags
+      .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      // Remove SVG path/attribute fragments
+      .replace(/\b(stroke|fill|viewBox|stroke-linecap|stroke-linejoin|stroke-width|xmlns|d)="[^"]*"/gi, '')
+      .replace(/\b(none|currentColor|round)\b(?=\s*(stroke|fill|"|=))/gi, '')
+      // Remove path data (SVG d attribute content)
+      .replace(/\bd="[^"]*"/gi, '')
+      .replace(/M[\d\s.,LlHhVvCcSsQqTtAaZz-]+/g, '')
+      // Remove HTML entities
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/&#\d+;/gi, ' ')
+      // Remove URLs
+      .replace(/https?:\/\/[^\s]+/g, '')
+      // Remove email addresses
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '')
+      // Remove common code artifacts
+      .replace(/\b(class|className|onClick|onSubmit|onChange|style)="[^"]*"/gi, '')
+      .replace(/\b(id|name|type|value|placeholder)="[^"]*"/gi, '')
+      // Remove hex colors
+      .replace(/#[0-9a-fA-F]{3,8}\b/g, '')
+      // Remove CSS-like properties
+      .replace(/[a-z-]+:\s*[^;{]+;/gi, ' ')
+      // Remove multiple special characters in a row
+      .replace(/[<>{}[\]()\/\\|]+/g, ' ')
+      // Remove lines that are mostly numbers/symbols (likely code or tables)
+      .replace(/^[\d\s.,;:|\-+*/=]+$/gm, '')
+      // Remove excessive whitespace
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .trim();
+    
+    return cleaned;
+  }
+
+  /**
    * Split text into chunks with overlap
    */
   chunkText(text) {
-    if (text.length <= this.chunkSize) {
-      return [text.trim()];
+    // Clean the text first
+    const cleanedText = this.cleanText(text);
+    
+    if (cleanedText.length <= this.chunkSize) {
+      return [cleanedText.trim()];
     }
 
     const chunks = [];
     let start = 0;
 
-    while (start < text.length) {
+    while (start < cleanedText.length) {
       let end = start + this.chunkSize;
       
       // Try to break at a sentence or paragraph boundary
-      if (end < text.length) {
+      if (end < cleanedText.length) {
         const breakPoints = ['\n\n', '\n', '. ', '! ', '? '];
         for (const bp of breakPoints) {
-          const lastBreak = text.lastIndexOf(bp, end);
+          const lastBreak = cleanedText.lastIndexOf(bp, end);
           if (lastBreak > start + this.chunkSize / 2) {
             end = lastBreak + bp.length;
             break;
@@ -291,7 +336,11 @@ export class FileDataSource extends BaseDataSource {
         }
       }
 
-      chunks.push(text.slice(start, end).trim());
+      const chunk = cleanedText.slice(start, end).trim();
+      // Only add chunks with meaningful content (at least 50 chars of real text)
+      if (chunk.length > 50) {
+        chunks.push(chunk);
+      }
       start = end - this.chunkOverlap;
     }
 

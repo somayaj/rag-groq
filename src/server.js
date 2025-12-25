@@ -15,7 +15,8 @@ async function main() {
   const port = parseInt(process.env.PORT) || 3000;
   const host = process.env.HOST || '0.0.0.0';
   const dataSourceType = process.env.DATASOURCE_TYPE || 'csv';
-  const topK = parseInt(process.env.TOP_K_RESULTS) || 5;
+  // Auto-adjust topK based on document count (min 5, max 20)
+  const topK = parseInt(process.env.TOP_K_RESULTS) || 10;
 
   if (!groqApiKey) {
     console.error('❌ Error: GROQ_API_KEY environment variable is required');

@@ -7,8 +7,8 @@ export class RAGEngine {
     this.dataSource = config.dataSource;
     this.llm = config.llm;
     this.embeddings = config.embeddings;
-    this.topK = config.topK || 5;
-    this.similarityThreshold = config.similarityThreshold || 0.3;
+    this.topK = config.topK || 10;
+    this.similarityThreshold = config.similarityThreshold || 0.15; // Lower threshold for better recall
     this.smartRouting = config.smartRouting ?? true; // Enable smart routing by default
     this.routingThreshold = config.routingThreshold || 0.25; // Min score to use RAG
     this.documentVectors = new Map();
@@ -262,7 +262,8 @@ export class RAGEngine {
       answer,
       sources: retrievedDocs.map(doc => ({
         id: doc.id,
-        content: doc.content.substring(0, 200) + (doc.content.length > 200 ? '...' : ''),
+        content: doc.content, // Full content for display
+        preview: doc.content.substring(0, 200) + (doc.content.length > 200 ? '...' : ''),
         metadata: doc.metadata,
         score: doc.score
       })),
@@ -286,15 +287,22 @@ If you don't know something, say so. Be concise and accurate.`;
    * @returns {string} - System prompt
    */
   getHybridPrompt() {
-    return `You are a knowledgeable AI assistant that combines data-specific information with general knowledge.
+    return `You are a knowledgeable AI assistant. You MUST follow this EXACT response format:
 
-Instructions:
-1. FIRST, if relevant context is provided, quote and cite the specific information from the data source
-2. THEN, supplement with additional relevant information from your general knowledge
-3. Clearly distinguish between what comes from the provided data vs your general knowledge
-4. Format: Start with "From your data:" for data-specific info, then "Additional information:" for general knowledge
-5. If the context has relevant info, always include it first before adding general knowledge
-6. Be comprehensive but concise`;
+**REQUIRED FORMAT:**
+
+From your data:
+[Quote relevant information from the provided context. Use quotation marks for direct quotes. Cite the source if available.]
+
+Additional information:
+[Add your own knowledge to expand on the topic. Provide useful context, examples, or explanations that go beyond what's in the data.]
+
+**RULES:**
+- ALWAYS use both sections "From your data:" and "Additional information:" in your response
+- The "From your data:" section MUST contain quotes or paraphrased content from the context provided
+- The "Additional information:" section MUST add value beyond just the context
+- If the context is not relevant, say "No directly relevant information found in your data" then provide general knowledge
+- Be comprehensive and helpful`;
   }
 
   /**

@@ -266,13 +266,24 @@
       return wrapper;
     }
 
-    // Format basic markdown
+    // Format basic markdown with source highlighting
     function formatMarkdown(text) {
-      return text
+      // FIRST: Format quotes BEFORE inserting any HTML (to avoid matching HTML attributes)
+      let formatted = text
+        .replace(/"([^"]+)"/g, '<span class="text-coral italic">"$1"</span>')
         .replace(/\*\*(.*?)\*\*/g, '<strong class="text-snow">$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`(.*?)`/g, '<code class="px-1.5 py-0.5 bg-ink rounded text-teal font-mono text-sm">$1</code>')
-        .replace(/\n/g, '<br>');
+        .replace(/`(.*?)`/g, '<code class="px-1.5 py-0.5 bg-ink rounded text-teal font-mono text-sm">$1</code>');
+      
+      // THEN: Insert section headers with SVG icons
+      formatted = formatted
+        .replace(/From your data:?/gi, '<div class="mt-2 mb-1 text-teal font-semibold flex items-center gap-2">📄 From your data:</div><div class="pl-3 border-l-2 border-teal/50 mb-3">')
+        .replace(/Additional information:?/gi, '</div><div class="mt-3 mb-1 text-azure font-semibold flex items-center gap-2">💡 Additional information:</div><div class="pl-3 border-l-2 border-azure/50">');
+      
+      // FINALLY: Handle newlines
+      formatted = formatted.replace(/\n/g, '<br>');
+      
+      return formatted;
     }
 
     // Create source card
@@ -288,12 +299,46 @@
           <span class="text-xs font-mono text-silver/60">#${index + 1}</span>
           <span class="text-xs font-mono ${scoreColor}">${score}%</span>
         </div>
-        <h4 class="text-sm font-medium text-snow mb-1 line-clamp-1">${source.metadata?.title || 'Document'}</h4>
-        <p class="text-xs text-silver/70 line-clamp-2">${source.content}</p>
+        <h4 class="text-sm font-medium text-snow mb-1 line-clamp-1">${source.metadata?.title || source.metadata?.fileName || 'Document'}</h4>
+        <p class="text-xs text-silver/70 line-clamp-2">${source.preview || source.content}</p>
         ${source.metadata?.category ? `<span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-ember/20 text-ember">${source.metadata.category}</span>` : ''}
+        ${source.metadata?.fileName ? `<span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-teal/20 text-teal">${source.metadata.fileName}</span>` : ''}
       `;
       
+      // Click to show full content in chat
+      card.addEventListener('click', () => {
+        showSourceInChat(source, index);
+      });
+      
       return card;
+    }
+
+    // Show source content in chat area
+    function showSourceInChat(source, index) {
+      clearWelcome();
+      
+      const title = source.metadata?.title || source.metadata?.fileName || `Source #${index + 1}`;
+      const score = Math.round(source.score * 100);
+      
+      // Create a styled source display
+      const sourceDisplay = document.createElement('div');
+      sourceDisplay.className = 'space-y-2';
+      sourceDisplay.innerHTML = `
+        <div class="flex items-center gap-2 text-teal text-sm font-semibold">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          ${title}
+          <span class="text-xs font-mono text-silver/60">(${score}% match)</span>
+        </div>
+        <div class="text-pearl text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-teal/30 pl-3">
+          ${source.content}
+        </div>
+        ${source.metadata?.fileName ? `<div class="text-xs text-silver/50 mt-2">📁 ${source.metadata.source || source.metadata.fileName}</div>` : ''}
+      `;
+      
+      messagesEl.appendChild(createMessage(sourceDisplay, false));
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
     // Update sources panel

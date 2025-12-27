@@ -44,14 +44,15 @@ export function createAPIServer(ragEngine, options = {}) {
   });
 
   // Get engine stats
-  app.get('/stats', (req, res) => {
+  app.get('/stats', async (req, res) => {
     try {
-      const stats = ragEngine.getStats();
+      const stats = await ragEngine.getStatsAsync();
       if (ragEngine.guardrails) {
         stats.guardrails = ragEngine.guardrails.getStats();
       }
       res.json(stats);
     } catch (error) {
+      console.error('Stats error:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -230,9 +231,10 @@ export function createAPIServer(ragEngine, options = {}) {
   app.post('/refresh', async (req, res) => {
     try {
       await ragEngine.refresh();
+      const stats = await ragEngine.getStatsAsync();
       res.json({ 
         message: 'Index refreshed',
-        documentCount: ragEngine.getStats().documentCount
+        documentCount: stats.documentCount
       });
     } catch (error) {
       console.error('Refresh error:', error);

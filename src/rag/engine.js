@@ -47,6 +47,16 @@ export class RAGEngine {
       await this.buildVectorIndex();
     }
 
+    // Update cached document count for Elasticsearch and other async data sources
+    if (this.dataSource && typeof this.dataSource.getStats === 'function') {
+      try {
+        await this.dataSource.getStats();
+        // Count is now cached in the data source
+      } catch (error) {
+        // Ignore errors, will use fallback
+      }
+    }
+
     this.initialized = true;
   }
 
@@ -428,6 +438,35 @@ Additional information:
     return {
       initialized: this.initialized,
       documentCount: this.documentVectors.size || this.dataSource?.getDocumentCount() || 0,
+      topK: this.topK,
+      similarityThreshold: this.similarityThreshold,
+      dataSourceType: this.dataSource?.constructor.name,
+      llmModel: this.llm?.model,
+      embeddingDimension: this.embeddings?.getDimension()
+    };
+  }
+
+  /**
+   * Get engine statistics (async version for accurate counts)
+   * @returns {Promise<Object>} - Engine stats with accurate document count
+   */
+  async getStatsAsync() {
+    let documentCount = this.documentVectors.size || this.dataSource?.getDocumentCount() || 0;
+    
+    // If data source has getStats method, use it for accurate count
+    if (this.dataSource && typeof this.dataSource.getStats === 'function') {
+      try {
+        const stats = await this.dataSource.getStats();
+        documentCount = stats.documentCount || documentCount;
+      } catch (error) {
+        // Fall back to cached count
+        console.warn('Could not get async stats from data source:', error.message);
+      }
+    }
+    
+    return {
+      initialized: this.initialized,
+      documentCount,
       topK: this.topK,
       similarityThreshold: this.similarityThreshold,
       dataSourceType: this.dataSource?.constructor.name,

@@ -18,6 +18,7 @@ export class ElasticsearchDataSource extends BaseDataSource {
     this.embeddingFunction = null;
     this.contentField = config.contentField || 'content';
     this.idField = config.idField || 'id';
+    this._cachedDocumentCount = 0;
   }
 
   async initialize() {
@@ -128,14 +129,20 @@ export class ElasticsearchDataSource extends BaseDataSource {
         }
       });
 
-      return response.hits.hits.map(hit => ({
+      const documents = response.hits.hits.map(hit => ({
         id: hit._id,
         content: hit._source[this.contentField] || '',
         metadata: hit._source.metadata || {},
         ...hit._source
       }));
+
+      // Cache the document count
+      this._cachedDocumentCount = documents.length;
+
+      return documents;
     } catch (error) {
       console.error('Error loading documents from Elasticsearch:', error.message);
+      this._cachedDocumentCount = 0;
       return [];
     }
   }
@@ -259,6 +266,9 @@ export class ElasticsearchDataSource extends BaseDataSource {
     // Refresh index to make document searchable immediately
     await this.client.indices.refresh({ index: this.indexName });
 
+    // Increment cached count
+    this._cachedDocumentCount++;
+
     return id;
   }
 
@@ -296,6 +306,9 @@ export class ElasticsearchDataSource extends BaseDataSource {
 
     // Refresh index to make document searchable immediately
     await this.client.indices.refresh({ index: this.indexName });
+
+    // Increment cached count
+    this._cachedDocumentCount++;
 
     return id;
   }
@@ -348,9 +361,8 @@ export class ElasticsearchDataSource extends BaseDataSource {
   }
 
   getDocumentCount() {
-    // Note: For accurate count, use getStats() which is async
-    // This returns 0 as Elasticsearch count requires async operation
-    return 0;
+    // Return cached count if available
+    return this._cachedDocumentCount || 0;
   }
 
   /**
@@ -362,6 +374,9 @@ export class ElasticsearchDataSource extends BaseDataSource {
       const stats = await this.client.count({ index: this.indexName });
       const health = await this.client.cluster.health({ index: this.indexName });
       
+      // Update cached count
+      this._cachedDocumentCount = stats.count;
+      
       return {
         documentCount: stats.count,
         health: health.status,
@@ -369,7 +384,7 @@ export class ElasticsearchDataSource extends BaseDataSource {
       };
     } catch (error) {
       return {
-        documentCount: 0,
+        documentCount: this._cachedDocumentCount || 0,
         health: 'unknown',
         indexName: this.indexName,
         error: error.message

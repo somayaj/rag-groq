@@ -519,6 +519,10 @@ const dataSource = new ElasticsearchDataSource({
   contentField: 'content',              // Field containing document content
   idField: 'id',                       // Field for document IDs
   
+  // Vector search configuration
+  maxNumCandidates: 10000,             // Max num_candidates (Elasticsearch limit)
+  numCandidatesMultiplier: 10,         // Multiplier for num_candidates (limit * multiplier)
+  
   // Authentication (choose one):
   username: process.env.ELASTICSEARCH_USERNAME,
   password: process.env.ELASTICSEARCH_PASSWORD,
@@ -548,7 +552,15 @@ ELASTICSEARCH_INDEX_NAME=rag-documents
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=your_password
 ELASTICSEARCH_DIMENSION=384
+ELASTICSEARCH_MAX_NUM_CANDIDATES=10000
+ELASTICSEARCH_NUM_CANDIDATES_MULTIPLIER=10
 ```
+
+**Vector Search Configuration:**
+- `maxNumCandidates`: Maximum value for `num_candidates` in kNN search (Elasticsearch limit: 10000). Default: 10000
+- `numCandidatesMultiplier`: Multiplier for calculating `num_candidates` (limit × multiplier). Default: 10
+- For `topK: 1000`, `num_candidates` will be `min(1000 × 10, 10000) = 10000`
+- For `topK: 100`, `num_candidates` will be `min(100 × 10, 10000) = 1000`
 
 **Quick setup with Docker:**
 ```bash
@@ -631,6 +643,8 @@ docker run -d \
 | `ELASTICSEARCH_API_KEY` | Elasticsearch API key | - |
 | `ELASTICSEARCH_CLOUD_ID` | Elastic Cloud ID | - |
 | `ELASTICSEARCH_DIMENSION` | Vector dimension | 384 |
+| `ELASTICSEARCH_MAX_NUM_CANDIDATES` | Max num_candidates for kNN search | 10000 |
+| `ELASTICSEARCH_NUM_CANDIDATES_MULTIPLIER` | Multiplier for num_candidates calculation | 10 |
 | `TOP_K_RESULTS` | Number of documents to retrieve | 5 |
 | `GROQ_MODEL` | Groq model to use | llama-3.3-70b-versatile |
 

@@ -19,6 +19,8 @@ export class ElasticsearchDataSource extends BaseDataSource {
     this.contentField = config.contentField || 'content';
     this.idField = config.idField || 'id';
     this._cachedDocumentCount = 0;
+    this.maxNumCandidates = config.maxNumCandidates || 10000; // Elasticsearch limit
+    this.numCandidatesMultiplier = config.numCandidatesMultiplier || 10; // Default: limit * 10
   }
 
   async initialize() {
@@ -155,6 +157,12 @@ export class ElasticsearchDataSource extends BaseDataSource {
    */
   async searchByVector(vector, limit = 5) {
     try {
+      // Calculate num_candidates: limit * multiplier, but cap at maxNumCandidates
+      const numCandidates = Math.min(
+        limit * this.numCandidatesMultiplier,
+        this.maxNumCandidates
+      );
+      
       const response = await this.client.search({
         index: this.indexName,
         body: {
@@ -162,7 +170,7 @@ export class ElasticsearchDataSource extends BaseDataSource {
             field: 'embedding',
             query_vector: vector,
             k: limit,
-            num_candidates: limit * 10
+            num_candidates: numCandidates
           },
           _source: {
             includes: [this.contentField, 'metadata', '*']

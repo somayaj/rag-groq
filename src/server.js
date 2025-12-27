@@ -116,7 +116,9 @@ async function main() {
           password: esPassword,
           apiKey: esApiKey,
           cloudId: esCloudId,
-          dimension: parseInt(process.env.ELASTICSEARCH_DIMENSION) || 384
+          dimension: parseInt(process.env.ELASTICSEARCH_DIMENSION) || 384,
+          maxNumCandidates: parseInt(process.env.ELASTICSEARCH_MAX_NUM_CANDIDATES) || 10000,
+          numCandidatesMultiplier: parseInt(process.env.ELASTICSEARCH_NUM_CANDIDATES_MULTIPLIER) || 10
         });
         console.log(`🔍 Data source: Elasticsearch (${esIndex} at ${esNode})`);
         break;

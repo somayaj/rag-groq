@@ -1,6 +1,6 @@
 {
   "name": "rag-groq",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "A RAG (Retrieval-Augmented Generation) package that integrates multiple data sources (CSV, Database, Pinecone, Elasticsearch) with Groq LLM for intelligent Q&A",
   "main": "src/index.js",
   "type": "module",
